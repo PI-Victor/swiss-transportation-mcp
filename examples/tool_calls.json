@@ -1,0 +1,75 @@
+[
+  {
+    "name": "Luzern -> Basel (direct train)",
+    "method": "tools/call",
+    "params": {
+      "name": "plan_trip",
+      "arguments": {
+        "from_station": "Luzern",
+        "to_station": "Basel SBB",
+        "datetime": "earliest",
+        "modes": ["rail"]
+      }
+    }
+  },
+  {
+    "name": "Zurich -> Geneva (long distance)",
+    "method": "tools/call",
+    "params": {
+      "name": "plan_trip",
+      "arguments": {
+        "from_station": "Zurich HB",
+        "to_station": "Geneve",
+        "datetime": "earliest",
+        "modes": ["rail"]
+      }
+    }
+  },
+  {
+    "name": "Lausanne -> Montreux (regional + ship option)",
+    "method": "tools/call",
+    "params": {
+      "name": "plan_trip",
+      "arguments": {
+        "from_station": "Lausanne",
+        "to_station": "Montreux",
+        "datetime": "earliest",
+        "modes": ["rail", "ship"]
+      }
+    }
+  },
+  {
+    "name": "Station search: HB -> Zurich HB",
+    "method": "tools/call",
+    "params": {
+      "name": "search_stations",
+      "arguments": {
+        "query": "HB",
+        "limit": 10
+      }
+    }
+  },
+  {
+    "name": "Realtime departures at Lausanne",
+    "method": "tools/call",
+    "params": {
+      "name": "get_departures",
+      "arguments": {
+        "station_id": "8501120",
+        "limit": 20,
+        "time_window": 120
+      }
+    }
+  },
+  {
+    "name": "Monitor trip delay > 10 minutes",
+    "method": "tools/call",
+    "params": {
+      "name": "monitor_trip",
+      "arguments": {
+        "trip_id": "trip-123",
+        "notify_on_delay_minutes": 10
+      }
+    }
+  }
+]
