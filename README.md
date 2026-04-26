@@ -6,9 +6,12 @@ MCP stdio server for Swiss public transport data using:
 
 ## Environment
 
+Create an API token in OpenTransportData and export it:
+
 ```bash
-export SBB_API_TOKEN="..."
-export SBB_GTFS_RT_TOKEN="..."   # optional, defaults to SBB_API_TOKEN
+export OJP2_TOKEN="YOUR_OPENTRANSPORTDATA_TOKEN"
+# optional, only if GTFS-RT uses a different token
+export SBB_GTFS_RT_TOKEN="YOUR_GTFS_RT_TOKEN"
 export MCP_SERVER_NAME="sbb-transport"
 export CACHE_TTL_SECONDS="300"
 ```
@@ -22,6 +25,8 @@ export SBB_GTFS_RT_ENDPOINT="https://api.opentransportdata.swiss/gtfs-rt"
 
 ## Run
 
+`--api-token` is required (or `OJP2_TOKEN` env var must be set):
+
 ```bash
 cargo run
 ```
@@ -32,9 +37,31 @@ CLI is parsed with `structopt`; flags override env values:
 
 ```bash
 cargo run -- \
-  --api-token "$SBB_API_TOKEN" \
+  --api-token "$OJP2_TOKEN" \
   --server-name "sbb-transport"
 ```
+
+Show all CLI options:
+
+```bash
+cargo run -- --help
+```
+
+## Add To Codex MCP
+
+Add this MCP server entry to your Codex config at `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.sbb_transport]
+command = "cargo"
+args = ["run", "--manifest-path", "/Users/vicp/projects/rust/swiss-transport-mcp/Cargo.toml", "--quiet", "--"]
+env = { OJP2_TOKEN = "YOUR_OPENTRANSPORTDATA_TOKEN", SBB_GTFS_RT_TOKEN = "YOUR_GTFS_RT_TOKEN", MCP_SERVER_NAME = "sbb-transport", CACHE_TTL_SECONDS = "300" }
+```
+
+If you use one token for both endpoints, remove `SBB_GTFS_RT_TOKEN` from the `env` table.
+`OJP2_TOKEN` should contain your OJP token.
+
+Restart Codex after saving the config so the MCP server is discovered and its tools are loaded.
 
 ## Implemented MCP Tools
 

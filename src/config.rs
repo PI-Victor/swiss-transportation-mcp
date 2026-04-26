@@ -4,7 +4,7 @@ use structopt::StructOpt;
 #[derive(Debug, Clone, StructOpt)]
 #[structopt(name = "swiss-transport-mcp")]
 pub struct Cli {
-    #[structopt(long = "api-token", env = "SBB_API_TOKEN")]
+    #[structopt(long = "api-token", env = "OJP2_TOKEN")]
     pub api_token: String,
 
     #[structopt(long = "gtfs-rt-token", env = "SBB_GTFS_RT_TOKEN")]
