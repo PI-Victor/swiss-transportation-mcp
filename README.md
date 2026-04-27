@@ -122,3 +122,96 @@ Restart Codex after saving the config so the MCP server is discovered and its to
 ## Example Requests
 
 See [`examples/tool_calls.json`](/Users/vicp/projects/rust/swiss-transport-mcp/examples/tool_calls.json) for ready-to-send `tools/call` payloads.
+
+## Sample AI Output
+
+### 1) Luzern -> Zürich HB (rail with formation)
+
+Prompt:
+`Give me the next train from Luzern to Zürich HB and coach sectors.`
+
+Example AI response:
+
+```text
+Best option: IR70
+- Departure: 20:10 from Luzern, platform 3
+- Arrival: 20:50 at Zürich HB, platform 12
+- Duration: 40 min
+
+Boarding hint:
+- Go to sector D for coach 2:9 (wheelchair spaces, stroller area)
+
+Coach classes:
+- 2nd class: 2:1, 2:2, 2:3, 2:4, 2:5, 2:6, 2:7, 2:8, 2:9
+- 1st class: W1:10, 1:11, 1:12, 1:14
+
+Sector mapping:
+- B: coach 2:3
+- C: coach 2:7
+- D: coach 2:9
+```
+
+### 2) Deterministic point-to-point (explicit stop IDs)
+
+Prompt:
+`Plan rail options from stop 8505000 to 8503000.`
+
+Example AI response:
+
+```text
+Resolved route: Luzern (8505000) -> Zürich HB (8503000)
+
+Top 3 rail options:
+1) IR70, dep 20:10, arr 20:50, ~40 min
+2) IR75, dep 20:35, arr 21:24, ~49 min
+3) IR70, dep 21:10, arr 21:50, ~40 min
+
+Use this mode when you need deterministic planning and want to avoid name resolution ambiguity.
+```
+
+### 3) Detailed bus ride (single-line city trip)
+
+Prompt:
+`Show me a detailed bus itinerary from Bern, Bahnhof to Bern, Bärengraben.`
+
+Example AI response:
+
+```text
+Connection: Bus 12 (direct)
+- Departure: 19:55 from Bern, Bahnhof (platform A)
+- Arrival: 20:01 at Bern, Bärenpark
+- Duration: 6 min
+
+Stop-by-stop:
+1) Bern, Bahnhof (dep 19:55)
+2) Bern, Bärenplatz (arr 19:56)
+3) Bern, Zytglogge (arr 19:58)
+4) Bern, Rathaus (arr 19:59)
+5) Bern, Nydegg (arr 20:00)
+6) Bern, Bärenpark (arr 20:01)
+```
+
+### 4) Detailed bus ride (multi-leg transfer)
+
+Prompt:
+`Give me a bus-only route from Zürich, Central to Zürich, Bucheggplatz with all legs.`
+
+Example AI response:
+
+```text
+Trip summary:
+- Total duration: ~16 min
+- Transfers: 1
+
+Leg 1: Bus 46
+- Zürich, Central -> Zürich, Bahnhofquai/HB
+
+Leg 2: Bus 46
+- Zürich, Bahnhofquai/HB -> Zürich, Rosengartenstrasse
+- Intermediate stops include Stampfenbachplatz, Nordstrasse, Lettenstrasse, Zürich Wipkingen Bahnhof
+
+Leg 3: Bus 83
+- Zürich, Rosengartenstrasse -> Zürich, Bucheggplatz (platform G)
+
+Each leg includes realtime expected/scheduled times and platform updates where provided by the feed.
+```
