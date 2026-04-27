@@ -10,8 +10,8 @@ Create an API token in OpenTransportData and export it:
 
 ```bash
 export OJP2_TOKEN="YOUR_OPENTRANSPORTDATA_TOKEN"
-# optional, only if GTFS-RT uses a different token
-export SBB_GTFS_RT_TOKEN="YOUR_GTFS_RT_TOKEN"
+export GTFS_RT_TOKEN="YOUR_GTFS_RT_TOKEN"
+export FORMATION_TOKEN="YOUR_TRAIN_FORMATION_TOKEN"
 export MCP_SERVER_NAME="sbb-transport"
 export CACHE_TTL_SECONDS="300"
 ```
@@ -19,16 +19,16 @@ export CACHE_TTL_SECONDS="300"
 Optional endpoint overrides:
 
 ```bash
-export SBB_OJP_ENDPOINT="https://api.opentransportdata.swiss/ojp20"
-export SBB_GTFS_RT_ENDPOINT="https://api.opentransportdata.swiss/gtfs-rt"
+export OJP2_ENDPOINT="https://api.opentransportdata.swiss/ojp20"
+export GTFS_RT_ENDPOINT="https://api.opentransportdata.swiss/la/gtfs-rt"
 ```
 
 ## Run
 
-`--api-token` is required (or `OJP2_TOKEN` env var must be set):
+Token is read from `OJP2_TOKEN` by default:
 
 ```bash
-cargo run
+swiss-transportation-mcp
 ```
 
 The process speaks MCP JSON-RPC on stdio with `Content-Length` framing.
@@ -36,7 +36,7 @@ The process speaks MCP JSON-RPC on stdio with `Content-Length` framing.
 CLI is parsed with `structopt`; flags override env values:
 
 ```bash
-cargo run -- \
+swiss-transportation-mcp \
   --api-token "$OJP2_TOKEN" \
   --server-name "sbb-transport"
 ```
@@ -44,7 +44,7 @@ cargo run -- \
 Show all CLI options:
 
 ```bash
-cargo run -- --help
+swiss-transportation-mcp --help
 ```
 
 ## Add To Codex MCP
@@ -53,13 +53,41 @@ Add this MCP server entry to your Codex config at `~/.codex/config.toml`:
 
 ```toml
 [mcp_servers.sbb_transport]
-command = "cargo"
-args = ["run", "--manifest-path", "/Users/vicp/projects/rust/swiss-transport-mcp/Cargo.toml", "--quiet", "--"]
-env = { OJP2_TOKEN = "YOUR_OPENTRANSPORTDATA_TOKEN", SBB_GTFS_RT_TOKEN = "YOUR_GTFS_RT_TOKEN", MCP_SERVER_NAME = "sbb-transport", CACHE_TTL_SECONDS = "300" }
+command = "swiss-transportation-mcp"
+args = []
+env = { OJP2_TOKEN_ENV = "OJP2_TOKEN", GTFS_RT_TOKEN_ENV = "GTFS_RT_TOKEN", FORMATION_TOKEN_ENV = "FORMATION_TOKEN", MCP_SERVER_NAME = "sbb-transport", CACHE_TTL_SECONDS = "300" }
+env_vars = ["OJP2_TOKEN", "GTFS_RT_TOKEN", "FORMATION_TOKEN"]
 ```
 
-If you use one token for both endpoints, remove `SBB_GTFS_RT_TOKEN` from the `env` table.
-`OJP2_TOKEN` should contain your OJP token.
+### Token Loading In AI Agents
+
+Yes, AI agents (including Codex) fetch the token from the MCP server process environment.
+This server reads the token env var names from `OJP2_TOKEN_ENV`, `GTFS_RT_TOKEN_ENV`, and `FORMATION_TOKEN_ENV`.
+Defaults are `OJP2_TOKEN`, `GTFS_RT_TOKEN`, and `FORMATION_TOKEN`.
+
+Export the real token env vars in your shell before starting Codex so the MCP process inherits them:
+
+```bash
+export OJP2_TOKEN="YOUR_OPENTRANSPORTDATA_TOKEN"
+export GTFS_RT_TOKEN="YOUR_GTFS_RT_TOKEN"
+export FORMATION_TOKEN="YOUR_TRAIN_FORMATION_TOKEN"
+```
+
+In Codex CLI, secret-like variables are excluded from inherited env by default.
+`env_vars = ["OJP2_TOKEN", "GTFS_RT_TOKEN", "FORMATION_TOKEN"]` is required so this MCP stdio server receives those variables.
+If Codex cannot find `swiss-transportation-mcp`, enable shell profile inheritance so `~/.cargo/bin` is available:
+
+```toml
+[shell_environment_policy]
+experimental_use_profile = true
+```
+
+If `OJP2_TOKEN` is not present (and `--api-token` is not passed), startup fails with:
+`missing OJP token: set <value of OJP2_TOKEN_ENV> or pass --api-token`.
+
+If `GTFS_RT_TOKEN` is not present (and `--gtfs-rt-token` is not passed), startup fails.
+
+If `FORMATION_TOKEN` is not present (and `--formation-token` is not passed), startup fails.
 
 Restart Codex after saving the config so the MCP server is discovered and its tools are loaded.
 

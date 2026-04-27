@@ -3,7 +3,6 @@ mod cache;
 mod config;
 mod mcp;
 mod models;
-mod nl;
 mod service;
 
 use anyhow::Result;

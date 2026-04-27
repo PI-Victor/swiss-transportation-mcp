@@ -71,7 +71,11 @@ pub struct Trip {
 pub struct TripLeg {
     pub mode: String,
     pub line: Option<String>,
+    pub service: String,
     pub operator: Option<String>,
+    pub occupancy: Option<TripLegOccupancy>,
+    pub stops: Vec<String>,
+    pub stop_calls: Vec<TripLegStopCall>,
     pub from: LegStop,
     pub to: LegStop,
     pub departure: TimeInfo,
@@ -84,6 +88,7 @@ pub struct TripLeg {
 pub struct LegStop {
     pub station: String,
     pub platform: Option<String>,
+    pub coordinates: Option<GeoPoint>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -96,9 +101,45 @@ pub struct TimeInfo {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct TripLegStopCall {
+    pub station: String,
+    pub platform: Option<String>,
+    pub scheduled_platform: Option<String>,
+    pub expected_platform: Option<String>,
+    pub coordinates: Option<GeoPoint>,
+    pub arrival: Option<StopCallTime>,
+    pub departure: Option<StopCallTime>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GeoPoint {
+    pub latitude: f64,
+    pub longitude: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StopCallTime {
+    pub scheduled: DateTime<FixedOffset>,
+    pub expected: DateTime<FixedOffset>,
+    pub delay_minutes: i32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TripLegOccupancy {
+    pub first_class: Option<String>,
+    pub second_class: Option<String>,
+    pub general: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Departure {
     pub trip_id: Option<String>,
     pub line: Option<String>,
+    pub service: String,
     pub destination: String,
     pub mode: Option<String>,
     pub scheduled: DateTime<FixedOffset>,
@@ -198,6 +239,8 @@ pub struct StationsResponse {
 pub struct TripsResponse {
     pub trips: Vec<Trip>,
     pub warning: Option<ToolWarning>,
+    pub report: Option<TripPlanReport>,
+    pub option_reports: Vec<TripOptionReport>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -219,4 +262,114 @@ pub struct TripDetailsResponse {
 pub struct DisruptionsResponse {
     pub disruptions: Vec<Disruption>,
     pub warning: Option<ToolWarning>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TripPlanReport {
+    pub generated_at: DateTime<FixedOffset>,
+    pub origin: String,
+    pub destination: String,
+    pub total_options: usize,
+    pub delayed_options: usize,
+    pub live_events: Vec<Disruption>,
+    pub live_events_status: String,
+    pub live_events_warning: Option<ToolWarning>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TripOptionReport {
+    pub trip_id: String,
+    pub time: TripOptionTime,
+    pub platform: TripOptionPlatform,
+    pub final_destination: String,
+    pub origin_coordinates: Option<GeoPoint>,
+    pub final_destination_coordinates: Option<GeoPoint>,
+    pub occupancy: Option<TripLegOccupancy>,
+    pub events: Vec<Disruption>,
+    pub events_status: String,
+    pub wagon_formation: Option<String>,
+    pub wagon_formation_status: String,
+    pub wagon_formation_readable: Option<String>,
+    pub wagon_formation_diagram: Option<String>,
+    pub wagon_formation_human_display: Option<String>,
+    pub wagon_formation_boarding_hint: Option<String>,
+    pub wagon_formation_legend: Option<Vec<String>>,
+    pub wagon_formation_parsed: Option<WagonFormationParsed>,
+    pub sector_to_coach_range: Option<Vec<WagonFormationSectorRange>>,
+    pub accessible_coaches: Option<Vec<String>>,
+    pub first_class_coaches: Option<Vec<String>>,
+    pub second_class_coaches: Option<Vec<String>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TripOptionTime {
+    pub departure: DateTime<FixedOffset>,
+    pub arrival: DateTime<FixedOffset>,
+    pub duration_minutes: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TripOptionPlatform {
+    pub departure: Option<String>,
+    pub arrival: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WagonFormationParsed {
+    pub coaches: Vec<WagonFormationCoach>,
+    pub padding: WagonFormationPadding,
+    pub sectors_seen: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WagonFormationCoach {
+    pub id: String,
+    pub vehicle_type: String,
+    pub class_label: String,
+    pub sector: Option<String>,
+    pub services: Vec<String>,
+    pub no_passage_prev: bool,
+    pub no_passage_next: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WagonFormationPadding {
+    pub front: usize,
+    pub rear: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WagonFormationSectorRange {
+    pub sector: String,
+    pub from_coach: String,
+    pub to_coach: String,
+}
+
+pub fn format_service_label(mode: Option<&str>, line: Option<&str>) -> String {
+    let mode_label = mode
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(|value| match value.to_ascii_lowercase().as_str() {
+            "rail" | "train" => "Train",
+            "bus" => "Bus",
+            "tram" => "Tram",
+            "ship" | "water" => "Boat",
+            "cableway" => "Cableway",
+            "funicular" => "Funicular",
+            _ => "Transit",
+        })
+        .unwrap_or("Transit");
+
+    match line.map(str::trim).filter(|value| !value.is_empty()) {
+        Some(line) => format!("{mode_label} {line}"),
+        None => mode_label.to_string(),
+    }
 }

@@ -5,12 +5,14 @@ use anyhow::{Result, anyhow};
 use chrono::{DateTime, FixedOffset, TimeZone, Utc};
 use chrono_tz::Europe::Zurich;
 use prost::Message;
+use reqwest::header::{ACCEPT, ACCEPT_ENCODING, USER_AGENT};
 use tokio::sync::RwLock;
 
 use crate::api::gtfs_realtime;
 use crate::cache::TtlCache;
 use crate::models::{
     Departure, Disruption, PlatformChange, StopUpdate, ToolWarning, TripDetails, TripStatus,
+    format_service_label,
 };
 
 #[derive(Clone)]
@@ -44,13 +46,34 @@ impl GtfsRtClient {
             .http
             .get(&self.endpoint)
             .bearer_auth(&self.token)
+            .header(
+                USER_AGENT,
+                concat!("swiss-transport-mcp/", env!("CARGO_PKG_VERSION")),
+            )
+            .header(ACCEPT, "application/octet-stream")
+            .header(ACCEPT_ENCODING, "gzip, deflate, br")
             .send()
             .await;
 
         match response {
             Ok(response) => {
                 if !response.status().is_success() {
-                    return Err(anyhow!("GTFS-RT API returned status {}", response.status()));
+                    let status = response.status();
+                    let final_url = response.url().to_string();
+                    let body = response.text().await.unwrap_or_default();
+                    let body_excerpt = body.trim();
+                    let body_detail = if body_excerpt.is_empty() {
+                        String::new()
+                    } else {
+                        let truncated = body_excerpt.chars().take(220).collect::<String>();
+                        format!(" (body: {truncated})")
+                    };
+                    return Err(anyhow!(
+                        "GTFS-RT API returned status {} at {}{}",
+                        status,
+                        final_url,
+                        body_detail
+                    ));
                 }
                 let bytes = response.bytes().await?;
                 let feed = gtfs_realtime::FeedMessage::decode(bytes)?;
@@ -112,6 +135,7 @@ impl GtfsRtClient {
                 departures.push(Departure {
                     trip_id: trip_id.clone(),
                     line: None,
+                    service: format_service_label(None, None),
                     destination: stop_update
                         .stop_headsign
                         .clone()

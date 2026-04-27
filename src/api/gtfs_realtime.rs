@@ -41,14 +41,14 @@ pub struct FeedEntity {
 pub struct TripUpdate {
     #[prost(message, optional, tag = "1")]
     pub trip: Option<TripDescriptor>,
-    #[prost(message, optional, tag = "2")]
-    pub vehicle: Option<VehicleDescriptor>,
-    #[prost(message, repeated, tag = "3")]
+    #[prost(message, repeated, tag = "2")]
     pub stop_time_update: Vec<StopTimeUpdate>,
+    #[prost(message, optional, tag = "3")]
+    pub vehicle: Option<VehicleDescriptor>,
     #[prost(uint64, optional, tag = "4")]
     pub timestamp: Option<u64>,
-    #[prost(uint32, optional, tag = "5")]
-    pub delay: Option<u32>,
+    #[prost(int32, optional, tag = "5")]
+    pub delay: Option<i32>,
 }
 
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -56,19 +56,19 @@ pub struct TripDescriptor {
     #[prost(string, optional, tag = "1")]
     pub trip_id: Option<String>,
     #[prost(string, optional, tag = "2")]
-    pub route_id: Option<String>,
-    #[prost(uint32, optional, tag = "3")]
-    pub direction_id: Option<u32>,
-    #[prost(string, optional, tag = "4")]
     pub start_time: Option<String>,
-    #[prost(string, optional, tag = "5")]
+    #[prost(string, optional, tag = "3")]
     pub start_date: Option<String>,
     #[prost(
         enumeration = "trip_descriptor::ScheduleRelationship",
         optional,
-        tag = "6"
+        tag = "4"
     )]
     pub schedule_relationship: Option<i32>,
+    #[prost(string, optional, tag = "5")]
+    pub route_id: Option<String>,
+    #[prost(uint32, optional, tag = "6")]
+    pub direction_id: Option<u32>,
 }
 
 pub mod trip_descriptor {
