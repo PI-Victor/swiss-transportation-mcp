@@ -3,10 +3,18 @@
 MCP stdio server for Swiss public transport data using:
 - OJP 2.0 (`/ojp20`) for trip planning, station lookup, and departure boards
 - GTFS-RT (`/gtfs-rt`) for real-time trip updates and disruptions
+- Train Formation API for coach composition, sectors, and accessibility metadata
 
 ## Environment
 
-Create an API token in OpenTransportData and export it:
+Create API access in OpenTransportData API Manager:
+
+1. Create an account at `https://api-manager.opentransportdata.swiss/`.
+2. Subscribe to all required APIs: OJP2, GTFS-RT, and Train Formation.
+3. Create one app and attach all 3 API subscriptions to that app.
+4. Generate an app token and use it for this MCP server.
+
+Export tokens in your shell:
 
 ```bash
 export OJP2_TOKEN="YOUR_OPENTRANSPORTDATA_TOKEN"
@@ -14,6 +22,16 @@ export GTFS_RT_TOKEN="YOUR_GTFS_RT_TOKEN"
 export FORMATION_TOKEN="YOUR_TRAIN_FORMATION_TOKEN"
 export MCP_SERVER_NAME="sbb-transport"
 export CACHE_TTL_SECONDS="300"
+```
+
+If your API Manager app gives you a single token for all 3 APIs, set all three env vars to that same value.
+
+You can also keep credentials in a `.env` file and load them into the current shell:
+
+```bash
+set -a
+source .env
+set +a
 ```
 
 Optional endpoint overrides:
